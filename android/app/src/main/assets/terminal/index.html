@@ -1,0 +1,94 @@
+<!doctype html>
+<!-- The terminal's screen: Ghostty's own terminal built for the browser
+     (ghostty-web), as the web page draws it. The app holds the socket to
+     the host and passes bytes both ways through `Libri` (Terminal.kt). -->
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  #screen { position: absolute; inset: 6px 8px; }
+  /* ghostty-web takes keys through a textarea; its caret is not the terminal's. */
+  textarea { caret-color: transparent; }
+</style>
+</head>
+<body>
+<div id="screen"></div>
+<script type="module">
+import { init, Terminal, FitAddon } from "./ghostty-web.js";
+
+const theme = JSON.parse(Libri.theme());
+document.body.style.background = theme.background;
+await init();
+const term = new Terminal({
+  fontSize: 13,
+  fontFamily: "monospace",
+  cursorBlink: true,
+  scrollback: 5000,
+  theme,
+});
+const fit = new FitAddon();
+term.loadAddon(fit);
+const screen = document.getElementById("screen");
+// The app's WebView lays this box out 0 tall from its insets alone (seen over
+// DevTools on Android 16), so the fit had no room to measure and the grid
+// stayed at the 80 by 24 it starts with, its last rows behind the keyboard.
+// Its height comes from the window's, which does follow the keyboard. This
+// goes once the box keeps its inset height there: #screen's clientHeight,
+// read over DevTools in the app with room() removed, is no longer 0.
+const room = () => {
+  if (innerHeight > 12) screen.style.height = `${innerHeight - 12}px`;
+};
+room();
+term.open(screen);
+// Fits the grid to the room the view has, and keeps the prompt in sight. The
+// app calls it whenever its view changes size (Terminal.kt), the keyboard
+// rising above all.
+const refit = () => {
+  room();
+  fit.fit();
+  term.scrollToBottom();
+};
+fit.observeResize();
+addEventListener("resize", refit);
+refit();
+document.fonts?.ready.then(refit);
+term.onData((data) => Libri.typed(data));
+// ghostty-web reads keydown and composition. A soft keyboard's plain words
+// come as beforeinput, which it cancels on the container and never reads, so
+// they are read here. Its focus() takes that container, not the textarea.
+const keys = term.textarea;
+keys.addEventListener("beforeinput", (e) => {
+  if (e.isComposing) return;
+  if (e.inputType === "insertText" && e.data) Libri.typed(e.data);
+  else if (e.inputType === "insertLineBreak") Libri.typed("\r");
+  else if (e.inputType === "deleteContentBackward") Libri.typed("\x7f");
+});
+// A tap on the strip past the last row misses the canvas, and focus falling
+// to the page there drops the keyboard.
+document.addEventListener("mousedown", (e) => {
+  if (e.target.closest("canvas, textarea")) return;
+  e.preventDefault();
+  keys.focus();
+});
+term.onResize(({ cols, rows }) => Libri.sized(cols, rows));
+
+const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+window.libri = {
+  // The first frame of each connection is the whole screen: drawn on a
+  // cleared terminal, so a reconnect does not stack screens. Cleared as the
+  // host clears it, as the web page does: term.reset() rebuilds the WASM
+  // terminal on freed memory (ghostty-web 0.4.0).
+  screen(b64) { term.write("\x1bc"); term.write(bytes(b64)); },
+  output(b64) { term.write(bytes(b64)); },
+  paste(text) { term.paste(text); },
+  focus() { keys.focus(); },
+  blur() { document.activeElement?.blur(); },
+  size() { Libri.sized(term.cols, term.rows); },
+  fit: refit,
+};
+Libri.ready(term.cols, term.rows);
+keys.focus();
+</script>
+</body>
+</html>

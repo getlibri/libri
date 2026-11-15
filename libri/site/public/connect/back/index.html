@@ -1,0 +1,68 @@
+<!doctype html>
+<!--
+  Where a Libri connection's OAuth sign-in returns, at one fixed address for
+  every install (the `connections.return_page` setting), as Home Assistant's
+  sign-ins return by my.home-assistant.io. Libri writes the address the
+  browser reached it at into the OAuth `state`, after a dot, in unpadded
+  base64url. This page reads it, checks it is a bare http or https origin,
+  and sends the browser on to that origin's /api/connections/back with the
+  query as the server gave it, and nowhere else. It keeps nothing, loads
+  nothing, and works at any address: nothing here depends on its own.
+  The code passing through is useless without the PKCE verifier, which
+  never leaves the Libri host.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Back to Libri</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 34rem; margin: 3rem auto; padding: 0 1.25rem; }
+  textarea { width: 100%; font: 13px/1.4 ui-monospace, monospace; box-sizing: border-box; }
+  [hidden] { display: none; }
+</style>
+</head>
+<body>
+<p id="going">Returning to Libri…</p>
+<div id="stuck" hidden>
+  <p>This page could not send you back to Libri.</p>
+  <p>Copy this page's whole address, below, and paste it into Libri under Settings &gt; Connections, in the box for signing in on another device. It works for 15 minutes.</p>
+  <textarea id="address" rows="5" readonly></textarea>
+</div>
+<script>
+// The address to send the browser on to, for this page's query (`search`,
+// with its "?"), or null where the state carries no origin to trust.
+function forward(search) {
+  const q = new URLSearchParams(search);
+  const state = q.get("state") || "";
+  const dot = state.indexOf(".");
+  if (dot < 0 || !(q.has("code") || q.has("error"))) return null;
+  let origin, u;
+  try {
+    origin = atob(state.slice(dot + 1).replace(/-/g, "+").replace(/_/g, "/"));
+    u = new URL(origin);
+  } catch {
+    return null;
+  }
+  // A bare origin, exactly as Libri wrote it: no path, query, fragment or
+  // credentials that could point the browser anywhere else.
+  if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+  if (u.origin !== origin || u.username || u.password) return null;
+  return u.origin + "/api/connections/back" + search;
+}
+if (typeof location !== "undefined" && typeof document !== "undefined") {
+  const to = forward(location.search);
+  if (to) location.replace(to);
+  else {
+    document.getElementById("going").hidden = true;
+    document.getElementById("stuck").hidden = false;
+    document.getElementById("address").value = location.href;
+  }
+}
+</script>
+</body>
+</html>

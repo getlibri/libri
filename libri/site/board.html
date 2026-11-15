@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Whiteboard</title>
+    <meta name="theme-color" content="#ede7dd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1b1815" media="(prefers-color-scheme: dark)" />
+    <!-- A whiteboard alone (src/boardPage.tsx): the Android app's place of
+         one, and a board link's page. Its own small entry, so it loads the
+         board and its editor, never the whole app. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- The meta, not only the CSS property: Chrome reads it to theme an
+         installed app's system bars (Kavita fixed the same bar this way, 4d0c675). -->
+    <meta name="color-scheme" content="light" />
+    <!-- Before first paint, so a dark page never flashes white: the saved
+         choice, else light (the default). src/theme.ts keeps it current. -->
+    <script>
+      var t = localStorage.getItem("theme") || "light";
+      document.documentElement.dataset.theme = t;
+      document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
+        m.removeAttribute("media");
+        m.content = t === "dark" ? "#1b1815" : "#ede7dd";
+      });
+      document.querySelector('meta[name="color-scheme"]').content = t;
+      document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = t === "dark" ? "black" : "default";
+    </script>
+    <link rel="icon" href="/icon/favicon.svg" type="image/svg+xml" />
+      <!-- The board fills the page and is never scrolled: in the app's web
+         view a scrolled page shifts the tabs up under the status bar. -->
+    <style>html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }</style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/boardPage.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The mark in one colour for the status bar.
+     Written by brand/generate_icons.mjs from brand/spine.svg; change the mark there, not here. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.43"
+        android:strokeLineCap="round"
+        android:pathData="M10.07,17.58Q6.45,10.37 2.72,9.16M10.07,17.58Q10.5,9.1 8.52,6.42M10.07,17.58Q13.64,9.9 13.46,6.73M10.07,17.58Q16.44,11.69 18.02,9.39M10.07,17.58Q15.69,16.49 21.28,15.39" />
+</vector>

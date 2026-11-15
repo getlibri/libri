@@ -1,0 +1,5 @@
+[
+ {"name":"search_email","description":"Search email by query (Fastmail syntax: from:, subject:, after:1d).","inputSchema":{"type":"object","properties":{"query":{"type":"string"},"limit":{"type":"integer"}},"required":["query"]},"annotations":{"readOnlyHint":true}},
+ {"name":"read_email","description":"Read one email by id.","inputSchema":{"type":"object","properties":{"id":{"type":"string"}},"required":["id"]},"annotations":{"readOnlyHint":true}},
+ {"name":"draft_email","description":"Save a draft email.","inputSchema":{"type":"object","properties":{"to":{"type":"string"},"subject":{"type":"string"},"body":{"type":"string"}},"required":["to","subject","body"]},"annotations":{"readOnlyHint":false}}
+]

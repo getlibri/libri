@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendar</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; font: 15px/1.5 var(--font-sans, system-ui, sans-serif);
+         background: var(--color-background-primary, Canvas); color: var(--color-text-primary, CanvasText); }
+  main { max-width: 40rem; margin: 0 auto; padding: 8px 20px 96px; }
+  header { display: flex; align-items: center; gap: 8px; padding: 12px 0 4px; }
+  header h1 { flex: 1; margin: 0; font: 600 20px/1.3 var(--font-serif, var(--font-sans, Georgia, serif)); }
+  button { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; border: 0; cursor: pointer;
+           background: var(--color-background-secondary, color-mix(in srgb, CanvasText 6%, Canvas)); color: inherit; }
+  button:hover { background: var(--color-background-tertiary, color-mix(in srgb, CanvasText 10%, Canvas)); }
+  .said { margin: 24px 0; color: var(--color-text-secondary, GrayText); }
+  section { margin-top: 20px; }
+  h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--color-text-secondary, GrayText); }
+  h2.today { color: var(--color-text-primary, CanvasText); }
+  ol { list-style: none; margin: 0; padding: 0; }
+  li { display: grid; grid-template-columns: 5.5rem 1fr; gap: 12px; padding: 8px 12px; margin: 0 -12px; border-radius: 12px; }
+  li:nth-child(odd) { background: var(--color-background-secondary, color-mix(in srgb, CanvasText 3%, Canvas)); }
+  .when { color: var(--color-text-secondary, GrayText); font-variant-numeric: tabular-nums; font-size: 14px; }
+  .what { min-width: 0; overflow-wrap: anywhere; }
+  .where { display: block; font-size: 13px; color: var(--color-text-secondary, GrayText); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="range">Calendar</h1>
+    <button id="earlier" type="button" aria-label="Earlier week">Earlier</button>
+    <button id="later" type="button" aria-label="Later week">Later</button>
+  </header>
+  <p class="said" id="said">Loading…</p>
+  <div id="days"></div>
+</main>
+<script>
+// A built-in's view (builtins.rs): one page for every calendar provider.
+// It asks the host for `agenda`, which the host reads from whichever
+// provider the person picked into one shape, and draws the next two weeks.
+// The MCP Apps protocol by hand: JSON-RPC over postMessage to the host.
+let id = 0;
+const waiting = new Map();
+function request(method, params) {
+  const i = ++id;
+  parent.postMessage({ jsonrpc: "2.0", id: i, method, params }, "*");
+  return new Promise((ok, fail) => waiting.set(i, { ok, fail }));
+}
+addEventListener("message", (e) => {
+  const m = e.data || {};
+  if (m.id && waiting.has(m.id) && !m.method) {
+    const w = waiting.get(m.id); waiting.delete(m.id);
+    m.error ? w.fail(new Error(m.error.message)) : w.ok(m.result);
+  } else if (m.method === "ui/notifications/host-context-changed") style(m.params);
+});
+function style(ctx) {
+  const fonts = ctx?.styles?.css?.fonts;
+  if (fonts && !document.getElementById("host-fonts")) {
+    const s = document.createElement("style"); s.id = "host-fonts"; s.textContent = fonts; document.head.append(s);
+  }
+  for (const [k, v] of Object.entries(ctx?.styles?.variables || {})) if (v) document.documentElement.style.setProperty(k, v);
+  if (ctx?.theme) document.documentElement.style.colorScheme = ctx.theme;
+}
+
+// Days by the calendar, not by 24 hours, so a change of clocks keeps midnight.
+const days = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const pad = (n) => String(n).padStart(2, "0");
+// RFC 3339 with this device's offset, as the host asks.
+function rfc3339(d) {
+  const o = -d.getTimezoneOffset(), s = o >= 0 ? "+" : "-", a = Math.abs(o);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00${s}${pad(a / 60 | 0)}:${pad(a % 60)}`;
+}
+// How far `zone` is ahead of UTC at instant `t`, in ms.
+function offset(t, zone) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: zone, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    .formatToParts(new Date(t)).map((x) => [x.type, x.value]));
+  return Date.UTC(+p.year, p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - t;
+}
+// An instant from what a server gave: with an offset as is; a wall time in
+// its zone; with neither, in this device's.
+function instant(text, zone) {
+  if (/[zZ]|[+-]\d\d:?\d\d$/.test(text.slice(10))) return new Date(text);
+  const [d, t = "00:00:00"] = text.split("T");
+  const [y, mo, da] = d.split("-").map(Number), [h, mi, se = 0] = t.split(":").map(parseFloat);
+  if (!zone) return new Date(y, mo - 1, da, h, mi, se);
+  const wall = Date.UTC(y, mo - 1, da, h, mi, se);
+  try {
+    let at = wall - offset(wall, zone);
+    at = wall - offset(at, zone);
+    return new Date(at);
+  } catch { return new Date(y, mo - 1, da, h, mi, se); }
+}
+function plus(start, iso) {
+  const m = /^P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(iso || "");
+  if (!m) return undefined;
+  const [, w = 0, d = 0, h = 0, mi = 0, s = 0] = m.map((x) => x || 0);
+  return new Date(start.getTime() + (((+w * 7 + +d) * 24 + +h) * 60 + +mi) * 60000 + s * 1000);
+}
+const time = (d) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+const dayName = (d) => d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+const key = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+let from = new Date(); from.setHours(0, 0, 0, 0);
+const SPAN = 14;
+
+function draw(events) {
+  const to = days(from, SPAN);
+  const short = (d) => d.toLocaleDateString([], { month: "short", day: "numeric" });
+  document.getElementById("range").textContent = `${short(from)} – ${short(days(to, -1))}`;
+  const byDay = new Map();
+  for (const e of events) {
+    const whole = e.all_day;
+    // A whole day is a date, the same on every device.
+    const start = whole ? new Date(...e.start.slice(0, 10).split("-").map((n, i) => +n - (i === 1 ? 1 : 0))) : instant(e.start, e.time_zone);
+    if (isNaN(start)) continue;
+    const end = e.end ? (whole ? undefined : instant(e.end, e.time_zone)) : whole ? undefined : plus(start, e.duration);
+    const k = key(start);
+    if (!byDay.has(k)) byDay.set(k, { date: start, items: [] });
+    byDay.get(k).items.push({ e, start, end, whole });
+  }
+  const today = key(new Date());
+  const list = [...byDay.values()].sort((a, b) => a.date - b.date);
+  for (const d of list) d.items.sort((a, b) => (b.whole - a.whole) || (a.start - b.start));
+  document.getElementById("said").textContent = list.length ? "" : "Nothing on your calendar these two weeks.";
+  document.getElementById("said").hidden = !!list.length;
+  document.getElementById("days").replaceChildren(...list.map((d) => {
+    const sec = document.createElement("section");
+    const h = document.createElement("h2");
+    h.textContent = key(d.date) === today ? `Today · ${dayName(d.date)}` : dayName(d.date);
+    if (key(d.date) === today) h.className = "today";
+    const ol = document.createElement("ol");
+    ol.append(...d.items.map(({ e, start, end, whole }) => {
+      const li = document.createElement("li");
+      const when = document.createElement("span");
+      when.className = "when";
+      when.textContent = whole ? "All day" : end ? `${time(start)}–${time(end)}` : time(start);
+      const what = document.createElement("span");
+      what.className = "what";
+      what.textContent = e.title || "(No title)";
+      if (e.location) what.append(Object.assign(document.createElement("span"), { className: "where", textContent: e.location }));
+      li.append(when, what);
+      return li;
+    }));
+    sec.append(h, ol);
+    return sec;
+  }));
+}
+
+async function load() {
+  const said = document.getElementById("said");
+  said.hidden = false;
+  said.textContent = "Loading…";
+  const to = days(from, SPAN);
+  try {
+    const r = await request("tools/call", { name: "agenda", arguments: { from: rfc3339(from), to: rfc3339(to) } });
+    if (r.isError) throw new Error((r.content || []).map((c) => c.text).join(" ") || "The calendar would not answer.");
+    draw(r.structuredContent?.events || []);
+  } catch (e) {
+    document.getElementById("days").replaceChildren();
+    said.textContent = e.message;
+  }
+}
+document.getElementById("earlier").onclick = () => { from = days(from, -7); load(); };
+document.getElementById("later").onclick = () => { from = days(from, 7); load(); };
+(async () => {
+  const init = await request("ui/initialize", { appInfo: { name: "Calendar", version: "1" }, appCapabilities: {}, protocolVersion: "2026-01-26" });
+  style(init.hostContext);
+  parent.postMessage({ jsonrpc: "2.0", method: "ui/notifications/initialized", params: {} }, "*");
+  load();
+})();
+</script>
+</body>
+</html>

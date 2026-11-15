@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The mark alone, for a launcher to tint as a themed icon.
+     Written by brand/generate_icons.mjs from brand/spine.svg; change the mark there, not here. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="4.05"
+        android:strokeLineCap="round"
+        android:pathData="M48.54,69.78Q38.3,49.37 27.72,45.96M48.54,69.78Q49.75,45.79 44.14,38.22M48.54,69.78Q58.65,48.04 58.13,39.08M48.54,69.78Q66.58,53.13 71.03,46.6M48.54,69.78Q64.44,66.72 80.28,63.6" />
+</vector>

@@ -1,0 +1,9 @@
+target/
+node_modules/
+dist/
+result*
+__pycache__/
+ui-driver-run/
+
+# Pictures `nix run .#browser-checks` leaves beside the checks it ran.
+/browser-checks/

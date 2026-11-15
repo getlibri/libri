@@ -1,0 +1,43 @@
+{
+  "name": "libri-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "check": "node --import ./check/resolve.mjs --test check/history.test.mjs check/scratchpad.test.mjs check/workers.test.mjs check/temp.test.mjs check/nap.test.mjs check/return.test.mjs"
+  },
+  "dependencies": {
+    "@assistant-ui/react": "0.15.28",
+    "@assistant-ui/react-streamdown": "0.3.20",
+    "@excalidraw/excalidraw": "0.18.1",
+    "@fontsource-variable/inter": "5.3.0",
+    "@modelcontextprotocol/client": "2.4.0",
+    "@modelcontextprotocol/core": "2.4.0",
+    "@modelcontextprotocol/ext-apps": "2.0.4",
+    "@shikijs/themes": "3.23.0",
+    "@streamdown/code": "1.1.1",
+    "@streamdown/math": "1.0.3",
+    "ghostty-web": "0.4.0",
+    "katex": "0.19.0",
+    "pele": "1.10.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "streamdown": "2.7.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.4"
+  },
+  "overrides": {
+    "katex": "$katex",
+    "react": "$react",
+    "react-dom": "$react-dom"
+  }
+}

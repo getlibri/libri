@@ -1,0 +1,18 @@
+Libri
+Copyright 2026 Dylan Cleary
+
+This product includes software developed by Dylan Cleary, licensed under the
+Apache License, Version 2.0 (see LICENSE).
+
+It bundles third-party works under their own licenses:
+
+- ghostty-web (android/app/src/main/assets/terminal/ghostty-web.js),
+  Copyright (c) 2025 Coder, MIT License
+  (android/app/src/main/assets/terminal/LICENSE-ghostty-web).
+- Inter (android/app/src/main/res/font/inter.ttf),
+  Copyright (c) 2016 The Inter Project Authors, SIL Open Font License 1.1
+  (android/LICENSE-inter.txt).
+
+The model and provider logos under libri/site/src/logos and
+android/app/src/main/res/drawable/logo_*.xml are trademarks of their owners,
+used only to identify their products.

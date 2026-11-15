@@ -1,0 +1,36 @@
+[package]
+name = "libri-client"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lib]
+name = "libri_client"
+# `cdylib` is the library the Android app loads; `lib` is for the tests.
+crate-type = ["lib", "cdylib"]
+
+# Writes the Kotlin bindings from the built library (uniffi's library mode).
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["bindgen"]
+
+[features]
+bindgen = ["uniffi/cli"]
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+getrandom = "0.4"
+regex = { version = "1", default-features = false, features = ["std", "unicode"] }
+serde = { version = "1", features = ["derive"] }
+# Keeps a call's arguments in the order it gave them, as the page reads them.
+serde_json = { version = "1", features = ["preserve_order"] }
+uniffi = "0.32"
+ureq = { version = "3", default-features = false, features = ["json", "rustls"] }
+
+# Not stripped: UniFFI reads the bindings from the library's symbols, and
+# the Android build strips it as it packages it anyway.
+[profile.release]
+lto = "thin"
+opt-level = "s"

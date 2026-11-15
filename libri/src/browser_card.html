@@ -1,0 +1,196 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:light dark;font-family:var(--font-sans,system-ui,sans-serif);color:var(--color-text-primary,#2a251f);background:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;overflow:hidden}
+body{display:flex;flex-direction:column}
+body.full{height:100vh}
+#screen{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--color-background-secondary,#f1ebe0)}
+body:not(.full) #screen{flex:none;aspect-ratio:16/10}
+#pic{display:block;max-width:100%;max-height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
+body.mine #pic{cursor:pointer;touch-action:none;outline:2px solid var(--color-ring-primary,#b5652b);outline-offset:-2px}
+#empty{font-size:13px;color:var(--color-text-secondary,#6b6258);padding:16px;text-align:center}
+#bar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--color-border-secondary,#e6ddcf);font-size:13px;line-height:18px}
+#what{flex:1;min-width:0}
+#title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#state{color:var(--color-text-secondary,#6b6258);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.waiting #state{color:var(--color-ring-primary,#b5652b);font-weight:600}
+button{font:inherit;font-size:13px;border-radius:var(--border-radius-md,8px);border:1px solid var(--color-border-primary,#d8cdbd);background:var(--color-background-primary,#fff);color:inherit;padding:6px 12px;min-height:32px;cursor:pointer;white-space:nowrap}
+button.main{background:var(--color-text-primary,#2a251f);color:var(--color-background-primary,#fff);border-color:transparent}
+#ask,#logins{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--color-border-secondary,#e6ddcf);font-size:13px;line-height:18px}
+#ask{background:var(--color-background-secondary,#f1ebe0)}
+#ask p,#logins p{flex:1 1 220px;margin:0}
+#ask b{font-weight:600}
+#sites{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 100%}
+#sites span{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--color-border-primary,#d8cdbd);border-radius:999px;padding:2px 4px 2px 10px}
+#sites button{border:0;background:transparent;padding:0 6px;min-height:24px}
+#keys{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px}
+</style></head>
+<body>
+<div id="screen"><img id="pic" alt="The browser's page" hidden><p id="empty">The browser is starting…</p><input id="keys" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type into the browser"></div>
+<div id="ask" hidden><p id="asktext"></p><button id="no">Not now</button><button id="yes" class="main">Allow</button></div>
+<div id="logins" hidden><p id="loginstext"></p><button id="stop">Stop using my logins</button><div id="sites"></div></div>
+<div id="bar">
+  <div id="what"><div id="title">Libri's browser</div><div id="state">Starting</div></div>
+  <button id="take" class="main">Take control</button>
+</div>
+<script>
+// The browser card, by the MCP Apps postMessage protocol with no SDK.
+// Full screen is the host's: its header holds the one button, and each
+// frame learns its mode from the host context alone, since the host draws
+// full screen as a second frame and this one stays inline. It
+// asks Libri for the browser's latest picture again and again (each ask
+// waits on the host until something changes), and while the person holds
+// the browser it sends their taps, scrolls and typing.
+let id = 0, at = 0, full = false, status = null, size = { width: 1280, height: 800 }, gone = false;
+const waiting = new Map();
+const $ = (x) => document.getElementById(x);
+function request(method, params) {
+  const i = ++id;
+  parent.postMessage({ jsonrpc: "2.0", id: i, method, params }, "*");
+  return new Promise((ok, fail) => waiting.set(i, { ok, fail }));
+}
+function notify(method, params) { parent.postMessage({ jsonrpc: "2.0", method, params }, "*"); }
+async function call(name, args) {
+  const r = await request("tools/call", { name, arguments: args });
+  if (r.isError) throw new Error((r.content || []).map((c) => c.text).join(" ") || "failed");
+  return r.structuredContent || {};
+}
+function style(ctx) {
+  if (!ctx) return;
+  if (ctx.theme) document.documentElement.style.colorScheme = ctx.theme;
+  for (const [k, v] of Object.entries(ctx.styles?.variables || {})) if (v) document.documentElement.style.setProperty(k, v);
+  if (ctx.displayMode) { full = ctx.displayMode === "fullscreen"; draw(); }
+}
+addEventListener("message", (e) => {
+  if (e.source !== parent) return;
+  const m = e.data || {};
+  if (m.id && waiting.has(m.id)) {
+    const w = waiting.get(m.id); waiting.delete(m.id);
+    return m.error ? w.fail(m.error) : w.ok(m.result);
+  }
+  if (m.method === "ui/notifications/host-context-changed") style(m.params);
+  else if (m.method === "ui/resource-teardown") { gone = true; parent.postMessage({ jsonrpc: "2.0", id: m.id, result: {} }, "*"); }
+});
+
+function draw() {
+  document.body.classList.toggle("full", full);
+  const s = status;
+  const mine = s?.holder === "person";
+  document.body.classList.toggle("mine", !!mine);
+  document.body.classList.toggle("waiting", !!s?.waiting && !mine);
+  $("take").textContent = mine ? "Hand back" : "Take control";
+  $("take").hidden = !s?.running;
+  if (!s) return;
+  const a = s.asking;
+  $("ask").hidden = !a;
+  if (a) {
+    $("asktext").replaceChildren(document.createTextNode(a.who + " asks for "), Object.assign(document.createElement("b"), { textContent: "your logins" }), document.createTextNode(" on " + a.site + ": " + a.reason));
+  }
+  const signed = !!s.granted;
+  // The list shows in the full view, or whenever the person's logins are loaded.
+  $("logins").hidden = !(signed || (full && s.sites?.length));
+  $("stop").hidden = !signed;
+  $("loginstext").textContent = signed ? "Your logins, for " + s.granted + ". The browser opens only:" : "Sites your logins may be used on:";
+  $("sites").replaceChildren(...(s.sites || []).map((site) => {
+    const x = Object.assign(document.createElement("button"), { textContent: "×", title: "Remove " + site });
+    x.setAttribute("aria-label", "Remove " + site);
+    x.onclick = () => act("browser_sites", { remove: site });
+    const chip = document.createElement("span"); chip.append(site, x); return chip;
+  }));
+  const where = s.yours ? "Your browser" : "Libri's browser";
+  $("title").textContent = s.title || s.url || where;
+  $("state").textContent = !s.running ? "Stopped" : mine ? (signed ? "You have control. Tap the page, then type." : "You have control, without your logins: a sign-in here is not kept.") : s.waiting ? "Waiting on you: " + s.waiting : "The agent is browsing" + (s.yours ? " in your browser" : "") + (s.url ? " · " + s.url.replace(/^https?:\/\//, "") : "");
+  if (!s.running) { $("pic").hidden = true; $("empty").hidden = false; $("empty").textContent = "The browser is stopped. It starts when an agent opens a page."; }
+}
+
+async function watch() {
+  while (!gone) {
+    try {
+      const v = await call("browser_view", { since: at });
+      at = v.at;
+      status = v.status;
+      if (v.frame) {
+        size = { width: v.frame.width, height: v.frame.height };
+        $("pic").src = "data:image/jpeg;base64," + v.frame.jpeg;
+        $("pic").hidden = false; $("empty").hidden = true;
+      }
+      draw();
+    } catch (e) {
+      $("state").textContent = "No view: " + (e.message || e);
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+  }
+}
+
+// One input at a time, in order, so typed letters land as typed.
+let queue = Promise.resolve();
+function send(input) {
+  queue = queue.then(() => call("browser_input", input)).catch((e) => { $("state").textContent = e.message || String(e); });
+}
+function point(e) {
+  const r = $("pic").getBoundingClientRect();
+  return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+}
+let down = null;
+$("pic").addEventListener("pointerdown", (e) => { if (status?.holder === "person") { down = { x: e.clientX, y: e.clientY }; e.preventDefault(); } });
+$("pic").addEventListener("pointerup", (e) => {
+  if (!down || status?.holder !== "person") return;
+  const dy = e.clientY - down.y, dx = e.clientX - down.x;
+  if (Math.hypot(dx, dy) < 8) {
+    send({ kind: "click", ...point(e) });
+    $("keys").focus({ preventScroll: true });
+  } else {
+    // A swipe scrolls the page the way a finger moves it.
+    const scale = size.height / $("pic").getBoundingClientRect().height;
+    send({ kind: "scroll", ...point(e), dy: -dy * scale });
+  }
+  down = null;
+});
+$("pic").addEventListener("wheel", (e) => { if (status?.holder === "person") { e.preventDefault(); send({ kind: "scroll", ...point(e), dy: e.deltaY }); } }, { passive: false });
+const NAMED = new Set(["Enter", "Tab", "Escape", "Backspace", "Delete", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Home", "End"]);
+$("keys").addEventListener("keydown", (e) => { if (NAMED.has(e.key)) { e.preventDefault(); send({ kind: "key", key: e.key }); } });
+// Phones type through input events, not key events.
+$("keys").addEventListener("beforeinput", (e) => {
+  if (e.inputType === "insertText" && e.data) send({ kind: "text", text: e.data });
+  else if (e.inputType === "deleteContentBackward") send({ kind: "key", key: "Backspace" });
+  else if (e.inputType === "insertLineBreak") send({ kind: "key", key: "Enter" });
+  else return;
+  e.preventDefault();
+});
+
+$("take").onclick = async () => {
+  const take = status?.holder !== "person";
+  // On a phone the page is laid out at the phone's size while the person
+  // holds it (browser.rs `control`): its screen, less the system's bars and
+  // the full view's own two. The screen, since the full view is another
+  // frame of this card and this one cannot measure it.
+  const phone = matchMedia("(pointer: coarse)").matches && screen.width < 700;
+  const fit = take && phone ? { width: screen.width, height: screen.height - 160 } : {};
+  try { status = (await call("browser_control", { take, ...fit })).status; } catch (e) { $("state").textContent = e.message || String(e); return; }
+  draw();
+  if (take && !full) request("ui/request-display-mode", { mode: "fullscreen" }).catch(() => {});
+};
+async function act(name, args) {
+  try { status = (await call(name, args)).status; } catch (e) { $("state").textContent = e.message || String(e); return; }
+  draw();
+}
+$("yes").onclick = () => act("browser_allow", { yes: true });
+$("no").onclick = () => act("browser_allow", { yes: false });
+$("stop").onclick = () => act("browser_sites", { stop: true });
+
+(async () => {
+  const r = await request("ui/initialize", {
+    protocolVersion: "2026-01-26",
+    appInfo: { name: "libri-browser", version: "1" },
+    appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] },
+  });
+  style(r.hostContext);
+  notify("ui/notifications/initialized", {});
+  new ResizeObserver(() => notify("ui/notifications/size-changed", { height: document.documentElement.scrollHeight }))
+    .observe(document.body);
+  draw();
+  watch();
+})();
+</script></body></html>

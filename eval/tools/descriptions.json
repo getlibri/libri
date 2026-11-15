@@ -1,0 +1,20 @@
+{
+ "watch": "Everything that happens on its own: `when`, then `then`, optionally a `look` with `tests` between.\n- when.at: local \"YYYY-MM-DD HH:MM\". when.every: daily, weekly, monthly, or an interval like 30m, 5m at the least; left out, once. when.push: {} instead of a time, to hear from another program: it gives an address to POST to, once; pass it on then.\n- then.note: sent as worded, no model. then.ask: a request worded as they would ask it, carried out and the answer sent. then.share_with: who else gets an ask's answer. then.worker: whose thread takes an ask.\nReminder: at + note. Routine: at + every + ask. Watching: every + a look through a read-only tool of a server you have (fastmail search_email, say) + tests. A look or push fires once per new item that passes; its turn sees only `fields`. Call with nothing to list them; change, turn off (on: false) or stop one by id.",
+ "spawn": "Start one subagent per task, in parallel; their names return at once. For any job of more than a few tool calls, or parts that can run side by side. Each report arrives as \"[Name] report\"; your person never sees it, so tell them what they need. A subagent knows what you want only from its task: say all it needs.",
+ "memory_zoom": "Open a line id+n of the main chat's memory into two halves, each in more words; n = 1 gives the message whole, so a line whose n is 1 needs no zoom. A worker gives only ids from memory_search, never from its <work>.",
+ "tell_agent": "Message a subagent by name. One at work reads it between tool calls; an idle one goes on from it. Its reply comes back to you. A subagent reaches the main chat as \"main\".",
+ "answer_subworker_request": "Answer a worker's \"Sub-worker request\", by the worker's name. Approve only when the part differs in kind from its own work. An approved sub-worker forks that worker's memory, starts on the brief (or your task in its place), and reports to the worker. Refused, the worker carries on alone. One sub-worker per worker at a time unless cap raises it.",
+ "request_subworker": "Ask the main chat for a sub-worker for a part of your job that is a different kind of work. Give the full brief, why you can't do it, and the model if it matters. Carry on meanwhile, alone if refused or unanswered. An approved one forks your memory and reports to you; your run waits on it as on a reply.",
+ "work_zoom": "Open a <work> line id+n of your own memory into two halves, each in more words; n = 1 gives the entry whole. Takes only ids from <work>; memory_search ids go to memory_zoom.",
+ "work_search": "Search your own entries since your start by regex; memory_search for what came before.",
+ "memory_search": "Search every message of the main chat's memory by regex; hits show id, who, when and context.",
+ "archive_agent": "Archive a finished subagent by name: off the Work list, restorable. Refused while it works or waits.",
+ "list_agents": "Your subagents, latest change first: name, state, task, last report. With archived, only those.",
+ "web_fetch": "Read whole pages when search excerpts aren't enough; only links from a web_search here or sent by the person.",
+ "files": "Your files (sent and received), by name, size and date, newest first.",
+ "show_page": "Publish an HTML page on your site at a name and get its link; reusing a name replaces it, old versions keep their links.",
+ "change_agent_model": "Move a subagent to another model by id or name, from its next run.",
+ "usage": "How much of each AI subscription's limits is used, and when each resets.",
+ "agent_chat": "A subagent's whole chat by name: task, calls, results, replies.",
+ "list_add": "Add items to a list, making it if new. Name people or assistants in `with` to share it; they hear what was added."
+}

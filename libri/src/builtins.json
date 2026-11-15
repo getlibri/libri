@@ -1,0 +1,93 @@
+{
+  "builtins": [
+    {
+      "id": "calendar",
+      "title": "Calendar",
+      "about": "Your calendars and events.",
+      "on": true,
+      "providers": [
+        {
+          "id": "fastmail",
+          "title": "Fastmail",
+          "address": "https://api.fastmail.com/mcp",
+          "read": ["list_calendars", "search_events"],
+          "write": ["create_event", "update_event", "compose_event", "rsvp_event", "delete_event"],
+          "agenda": {
+            "tool": "search_events",
+            "arguments": { "after": "{from_local}", "before": "{to_local}", "limit": 50 },
+            "list": "/items",
+            "id": "/id",
+            "title": "/title",
+            "start": "/start",
+            "duration": "/duration",
+            "all_day": "/isAllDay",
+            "time_zone": "/timeZone",
+            "location": "/locations/0/name",
+            "calendars": "/calendarIds"
+          },
+          "items": [
+            { "kind": "calendars", "title": "Calendars", "tool": "list_calendars", "list": "/items", "id": "/id", "name": "/name", "color": "/color" }
+          ]
+        },
+        {
+          "id": "google",
+          "title": "Google Calendar",
+          "address": "https://calendarmcp.googleapis.com/mcp/v1",
+          "waiting": "Not yet: Google signs in only with an app registered in Google Cloud.",
+          "read": ["list_events", "get_event", "list_calendars", "suggest_time", "search_events"],
+          "write": ["create_event", "update_event", "respond_to_event", "delete_event"],
+          "agenda": {
+            "tool": "list_events",
+            "arguments": { "timeMin": "{from}", "timeMax": "{to}" },
+            "list": "/events",
+            "id": "/id",
+            "title": "/summary",
+            "start": ["/start/dateTime", "/start/date"],
+            "end": ["/end/dateTime", "/end/date"],
+            "time_zone": "/start/timeZone",
+            "location": "/location"
+          }
+        },
+        {
+          "id": "microsoft",
+          "title": "Microsoft 365",
+          "address": "https://workiq.svc.cloud.microsoft/mcp",
+          "waiting": "Not yet: Microsoft signs in only with an app registered in Entra ID.",
+          "read": ["fetch", "fetch_blob", "call_function", "get_schema", "search_paths"],
+          "write": ["create_entity", "update_entity", "delete_entity", "do_action"]
+        }
+      ]
+    },
+    {
+      "id": "mail",
+      "title": "Mail",
+      "about": "Your mailboxes: reading, drafting and filing mail.",
+      "on": true,
+      "providers": [
+        {
+          "id": "fastmail",
+          "title": "Fastmail",
+          "address": "https://api.fastmail.com/mcp",
+          "read": ["search_email", "read_email", "read_thread", "list_folders", "list_identities", "read_attachment"],
+          "write": ["draft_email", "archive_email", "update_email", "upload_attachment", "send_email", "delete_email"]
+        },
+        {
+          "id": "google",
+          "title": "Gmail",
+          "address": "https://gmailmcp.googleapis.com/mcp/v1",
+          "waiting": "Not yet: Google signs in only with an app registered in Google Cloud.",
+          "read": ["search_threads", "get_thread", "get_message"],
+          "write": ["create_draft"]
+        },
+        {
+          "id": "microsoft",
+          "title": "Microsoft 365",
+          "address": "https://workiq.svc.cloud.microsoft/mcp",
+          "waiting": "Not yet: Microsoft signs in only with an app registered in Entra ID.",
+          "read": ["fetch", "fetch_blob", "call_function", "get_schema", "search_paths"],
+          "write": ["create_entity", "update_entity", "delete_entity", "do_action"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "about": "API list prices in USD per million tokens, standard tier, short context, by the first entry whose `match` is part of the model's id. Cache write is the 5-minute rate. Change a price here and every past row is priced again on its next read.",
+  "checked": "2026-11-06",
+  "models": [
+    {"match": "claude-opus-5", "company": "anthropic", "input": 4, "cache_read": 0.2, "cache_write": 5, "output": 20, "source": "Anthropic list prices, effective 2026-10-22 (assets.claude.com rate card)"},
+    {"match": "claude-sonnet-5", "company": "anthropic", "input": 2, "cache_read": 0.1, "cache_write": 2.5, "output": 10, "source": "Anthropic list prices, effective 2026-10-22"},
+    {"match": "claude-haiku-5", "company": "anthropic", "input": 0.1, "cache_read": 0.01, "cache_write": 0.125, "output": 0.5, "source": "polarison.com/models, verified 2026-11-04; check against platform.claude.com"},
+    {"match": "claude-fable-5", "company": "anthropic", "input": 10, "cache_read": 0.25, "cache_write": 12.5, "output": 50, "source": "platform.claude.com/docs/en/about-claude/pricing"},
+    {"match": "opus", "company": "anthropic", "input": 4, "cache_read": 0.2, "cache_write": 5, "output": 20, "source": "Claude Code alias; priced as Opus 5.5"},
+    {"match": "sonnet", "company": "anthropic", "input": 2, "cache_read": 0.1, "cache_write": 2.5, "output": 10, "source": "Claude Code alias; priced as Sonnet 5.5"},
+    {"match": "haiku", "company": "anthropic", "input": 0.1, "cache_read": 0.01, "cache_write": 0.125, "output": 0.5, "source": "Claude Code alias; priced as Haiku 5.5"},
+    {"match": "fable", "company": "anthropic", "input": 10, "cache_read": 0.25, "cache_write": 12.5, "output": 50, "source": "Claude Code alias; priced as Fable 5.1"},
+    {"match": "gpt-6-astra", "company": "openai", "input": 10, "cache_read": 1, "cache_write": 12.5, "output": 50, "source": "developers.openai.com/api/docs/pricing"},
+    {"match": "gpt-6.1-sol", "company": "openai", "input": 2, "cache_read": 0.1, "cache_write": 2.5, "output": 10, "source": "developers.openai.com/api/docs/pricing"},
+    {"match": "gpt-6-sol", "company": "openai", "input": 2, "cache_read": 0.2, "cache_write": 2.5, "output": 10, "source": "polarison.com/models, 2026-11-04"},
+    {"match": "gpt-6.1-terra", "company": "openai", "input": 1, "cache_read": 0.05, "cache_write": 1.25, "output": 5, "source": "developers.openai.com/api/docs/pricing"},
+    {"match": "gpt-6-luna", "company": "openai", "input": 0.1, "cache_read": 0.01, "cache_write": 0.125, "output": 0.5, "source": "developers.openai.com/api/docs/pricing"},
+    {"match": "deepseek-v4-pro", "company": "deepseek", "input": 1.32, "cache_read": 0.044, "cache_write": 1.32, "output": 3.96, "source": "api-docs.deepseek.com pricing, peak rate (off-peak is half)"},
+    {"match": "deepseek", "company": "deepseek", "input": 0.3, "cache_read": 0.006, "cache_write": 0.3, "output": 1.2, "source": "api-docs.deepseek.com pricing for deepseek-flash (V4.1 Flash 1017), peak rate (off-peak is half)"},
+    {"match": "grok-4.7", "company": "xai", "input": 2, "cache_read": 0.5, "cache_write": 2, "output": 6, "source": "polarison.com/models, 2026-11-04; check against docs.x.ai"},
+    {"match": "grok-4.3", "company": "xai", "input": 1.25, "cache_read": 0.2, "cache_write": 1.25, "output": 2.5, "source": "polarison.com/models, 2026-11-04; check against docs.x.ai"}
+  ],
+  "companies": [
+    {"match": "claude", "company": "anthropic"},
+    {"match": "gpt-", "company": "openai"},
+    {"match": "deepseek", "company": "deepseek"},
+    {"match": "grok", "company": "xai"},
+    {"match": "qwen", "company": "alibaba"},
+    {"match": "arete", "company": "nous"},
+    {"match": "llama", "company": "meta"},
+    {"match": "muse", "company": "meta"},
+    {"match": "gemini", "company": "google"},
+    {"match": "kimi", "company": "moonshot"},
+    {"match": "glm", "company": "zhipu"}
+  ],
+  "names": {
+    "anthropic": "Anthropic",
+    "openai": "OpenAI",
+    "deepseek": "DeepSeek",
+    "xai": "xAI",
+    "alibaba": "Alibaba",
+    "nous": "Nous Research",
+    "meta": "Meta",
+    "google": "Google",
+    "moonshot": "Moonshot",
+    "zhipu": "Zhipu",
+    "other": "Other"
+  }
+}

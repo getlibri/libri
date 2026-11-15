@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- The master of Libri's mark: an open book's spine, five pages fanned
+       from one point, open 100 degrees, every stroke 56 long along its curve,
+       turned 30 degrees clockwise; the top stroke curves and the bottom one
+       lies straight, as a book opens. Each stroke is a quadratic curve from
+       the spine, in a 120 box, drawn plain: one solid colour, stroke width 7,
+       round caps. Every icon is drawn from these five paths and this width by
+       generate_icons.mjs; to change the mark, change them here and rerun it. -->
+  <g fill="none" stroke="#2a2019" stroke-width="7" stroke-linecap="round">
+    <path d="M51.3 86.6 Q33.6 51.3 15.3 45.4"/>
+    <path d="M51.3 86.6 Q53.4 45.1 43.7 32"/>
+    <path d="M51.3 86.6 Q68.8 49 67.9 33.5"/>
+    <path d="M51.3 86.6 Q82.5 57.8 90.2 46.5"/>
+    <path d="M51.3 86.6 Q78.8 81.3 106.2 75.9"/>
+  </g>
+</svg>
